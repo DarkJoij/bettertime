@@ -1,82 +1,107 @@
 import typing
+from dataclasses import dataclass
 
-from . import regex
 from . import exceptions
+from . import formatter
+from . import regex
 
 
-# `NamedTuple` and everything simple to it go fuck itself.
-class DateParser:
-    date_aliases = {
-        'year': (
-            'y', 'year', 'ys', 'years',
-            'г', 'лет', 'год', 'года'
-        ),
-        'month': (
-            'mon', 'month', 'ms', 'months',
-            'мес', 'месяцев'
-        ),
-        'day': (
-            'd', 'day', 'ds', 'days',
-            'д', 'дней', 'дня', 'день'
-        ),
-        'hours': (
-            'h', 'hour', 'hs', 'hours',
-            'ч', 'час', 'часов', 'часа'
-        ),
-        'minute': (
-            'm', 'min', 'mins', 'minute', 'minutes',
-            'м', 'мин', 'минут', 'минуты', 'минута'
-        ),
-        'second': (
-            's', 'seconds', 'seconds',
-            'с', 'сек', 'секунды', 'секунда', 'секунд'
-        )
-    }
-    
-    to_number = {
-        'year': 31104000,
-        'month': 2592000,
-        'day': 86400,
-        'hours': 3600,
-        'minute': 60,
-        'second': 1
-    }
+# Not very comfortable, but I'm lazy to replace 
+@dataclass
+class Dates:
+    YEAR = (
+        'y', 'year', 'ys', 'years',
+        'г', 'год', 'лет', 'года'
+    )
+    MONTH = (
+        'mon', 'month', 'ms', 'months',
+        'мес', 'месяц', 'месяцев', 'месяца'
+    )
+    DAY = (
+        'd', 'day', 'ds', 'days',
+        'д', 'день', 'дней', 'дня',
+    )
+    HOUR = (
+        'h', 'hour', 'hs', 'hours',
+        'ч', 'час', 'часов', 'часа'
+    )
+    MINUTE = (
+        'm', 'min', 'minute', 'minutes',
+        'м', 'мин', 'минут', 'минуты', 'минута'
+    )
+    SECOND = (
+        's', 'sec', 'seconds', 'seconds',
+        'с', 'сек', 'секунды', 'секунда', 'секунд'
+    )
 
-    @classmethod
-    def parse_to_number(cls, this: regex.Token, other: regex.Token) -> typing.Union[int, bool]:
-        for date_part in cls.date_aliases:
-            if other.string.lower() in cls.date_aliases[date_part]:
-                other = date_part
-                return int(this.string) * cls.to_number[other]
-        return False
+    ALL = (
+        (YEAR, 'year'), (MONTH, 'month'), (DAY, 'day'), 
+        (HOUR, 'hour'), (MINUTE, 'minute'), (SECOND, 'second')
+    )
 
+
+to_seconds = {
+    'year': 31104000,
+    'month': 2592000,
+    'day': 86400,
+    'hour': 3600,
+    'minute': 60,
+    'second': 1
+}
 
 class Parser:
     position = 0
 
     def __init__(self, tokens: typing.List[regex.Token]) -> None:
         if len(tokens) < 2:
-            raise exceptions.ExpresionError(
+            raise exceptions.ExpressionError(
                 f'In expression found fewer than 2 parts. Make it bigger.'
             )
         self.tokens = tokens
+    
+    @staticmethod
+    def _parse_to_number(this_token: regex.Token, 
+                         other_token: regex.Token) -> typing.Union[int, bool]:
+        for date_package, name in Dates.ALL:
+            if other_token.string.lower() in date_package:
+                try:
+                    return int(this_token.string) * to_seconds[name]
+                except ValueError:
+                    return False
+        return False
 
-    def parse_to_seconds(self) -> int:  # Just some fun.
+
+    def parse_to_seconds(self) -> int:
         expression_value = 0
 
         while self.position < len(self.tokens):
-            token = self.tokens[self.position]
-            token_index = self.tokens.index(token)
+            this_token = self.tokens[self.position]
+            token_index = self.tokens.index(this_token)
             next_token = self.tokens[token_index + 1]
-                
-            if (token.group, next_token.group) == ('number', 'string'):
-                parsed = DateParser.parse_to_number(token, next_token)
-                if not parsed:
-                    raise exceptions.TokenOrderError(
-                        f'Two tokens ({token}, {next_token}) going ordered with similar types.'
-                    )
 
-                expression_value += parsed
-                self.position += 2
+            parsed = False
+                
+            if (this_token.group, next_token.group) == ('number', 'string'):
+                parsed = self._parse_to_number(this_token, next_token)
+            
+            if not parsed:
+                raise exceptions.TokenError(
+                    f'Cannot parse token with string: \'{this_token.string}\'.'
+                )
+
+            expression_value += parsed
+            self.position += 2
 
         return expression_value
+
+    @staticmethod
+    def parse_to_string(seconds: int,
+                        language: typing.Literal['ru', 'en'] = 'ru') -> str:
+        datearray = []
+
+        for date in to_seconds:
+            part, seconds = divmod(seconds, to_seconds[date])
+            if part > 0:
+                datearray.append((str(part), date))
+
+        return formatter.format_parts(datearray, language)
