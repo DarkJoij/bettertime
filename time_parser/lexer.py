@@ -1,16 +1,16 @@
 import re
 import typing
 
-from . import regex
 from . import exceptions
+from . import regex
 
 
 class Lexer:
-    tokens = []
+    tokens = [] 
     position = 0
 
-    def __init__(self, code: str) -> None:
-        self.code = code
+    def __init__(self, expression: str) -> None:
+        self.code = expression
 
     def next_token(self) -> bool:
         if self.position >= len(self.code):
@@ -18,7 +18,6 @@ class Lexer:
 
         for token_type in regex.TYPES:
             type_regex = regex.TYPES[token_type]
-
             type_regex = re.compile(type_regex)
             matched = type_regex.match(self.code, self.position)
 
