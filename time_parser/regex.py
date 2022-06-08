@@ -12,3 +12,4 @@ TYPES = {
 class Token:
     string: str
     group: str
+ 
