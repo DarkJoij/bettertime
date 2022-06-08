@@ -1,5 +1,7 @@
-from time_parser import to_seconds
+from time_parser import to_seconds, to_string
 
-not_parsed_time = '1год 13месяцев 120дней 40часов 70минут 140секунд'
-parsed_time = to_seconds(not_parsed_time)
+parsed_time = to_seconds('8дней 12часов 45минут 35секунд')
 print(parsed_time)
+
+already_not_parsed = to_string(34245)
+print(already_not_parsed)
