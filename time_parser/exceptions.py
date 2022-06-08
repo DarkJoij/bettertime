@@ -2,9 +2,9 @@ class InvalidCharacterError(Exception):
     pass
 
 
-class ExpresionError(Exception):
+class ExpressionError(Exception):
     pass
 
 
-class TokenOrderError(Exception):
+class TokenError(Exception):
     pass
