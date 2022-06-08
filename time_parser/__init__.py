@@ -1,15 +1,15 @@
 '''
-Time Parser Module.
+Better Time Module.
 ~~~~~~~~~~~~~~~~~~~
 
-Module converting string date 
-expressions to seconds [int].
+Library converting string
+date expressions to seconds [int].
 
 :copyright: (c) 2022 Dallas
 :license: MIT, see `MIT License` for more details.
 '''
 
-__title__ = 'time_parser'
+__title__ = 'bettertime'
 __author__ = 'Dallas'
 __license__ = 'MIT'
 __version__ = '1.0.0'
